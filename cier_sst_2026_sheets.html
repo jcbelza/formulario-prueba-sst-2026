@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIER – Indicadores SST 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── REEMPLAZAR ESTA URL CON LA DE TU APPS SCRIPT ── */
+/* Ver instrucciones en CIER_SST_AppScript.gs         */
+
+:root {
+  --azul:#4169E1; --azul-d:#2a4ab5; --azul-l:#e8eefb;
+  --naranja:#FF8C00; --naranja-l:#fff3e0;
+  --verde:#2e7d32; --verde-l:#e8f5e9;
+  --rojo:#c62828; --rojo-l:#ffebee;
+  --gris-bg:#F5F5F5; --gris-b:#e0e0e0; --gris-t:#666;
+  --blanco:#fff; --negro:#1a1a1a;
+  --sombra:0 2px 10px rgba(0,0,0,0.08);
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Montserrat',sans-serif;background:var(--gris-bg);color:var(--negro);font-size:14px;line-height:1.6}
+
+/* HEADER */
+.hdr{background:var(--azul);color:#fff;padding:20px 40px;display:flex;align-items:center;gap:18px}
+.hdr-logo{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:17px;font-weight:600;flex-shrink:0}
+.hdr h1{font-family:'Oswald',sans-serif;font-size:21px;font-weight:500;letter-spacing:.4px}
+.hdr p{font-size:12px;opacity:.8;margin-top:2px}
+
+/* STEPS */
+.steps{background:#fff;border-bottom:1px solid var(--gris-b);padding:12px 40px;display:flex;gap:4px;align-items:center;overflow-x:auto}
+.step{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid var(--gris-b);color:var(--gris-t);cursor:pointer;transition:all .2s}
+.step.active{background:var(--azul);color:#fff;border-color:var(--azul)}
+.step.done{background:var(--verde-l);color:var(--verde);border-color:var(--verde)}
+.step-sep{color:var(--gris-b);font-size:14px}
+
+/* MAIN */
+.main{max-width:900px;margin:28px auto 80px;padding:0 20px}
+
+/* CARD */
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--sombra);margin-bottom:22px;overflow:hidden;display:none}
+.card.active{display:block}
+.card-hdr{background:var(--azul);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:10px}
+.card-hdr.orange{background:var(--naranja)}
+.card-num{width:26px;height:26px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;flex-shrink:0}
+.card-hdr h2{font-family:'Oswald',sans-serif;font-size:15px;font-weight:500}
+.card-hdr p{font-size:11px;opacity:.85;margin-top:1px}
+.card-body{padding:22px}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:600;color:var(--gris-t);text-transform:uppercase;letter-spacing:.05em;line-height:1.4}
+.req{color:var(--rojo);margin-left:2px}
+.field input,.field select,.field textarea{border:1px solid var(--gris-b);border-radius:7px;padding:8px 11px;font-family:'Montserrat',sans-serif;font-size:13px;color:var(--negro);background:#fff;transition:border-color .2s,box-shadow .2s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px rgba(65,105,225,.1)}
+.field input.err{border-color:var(--rojo)}
+.field textarea{resize:vertical;min-height:76px}
+
+/* TABS */
+.tab-row{display:flex;gap:7px;margin-bottom:18px}
+.tb{padding:6px 16px;border-radius:20px;border:1px solid var(--gris-b);background:#fff;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--gris-t);cursor:pointer;transition:all .2s}
+.tb.pp{background:var(--azul);color:#fff;border-color:var(--azul)}
+.tb.pc{background:var(--naranja);color:#fff;border-color:var(--naranja)}
+.tp{display:none}.tp.active{display:block}
+
+/* INDICADORES */
+.ig{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:14px}
+.ic{background:var(--gris-bg);border-radius:8px;padding:10px 13px;border-left:3px solid var(--azul)}
+.ic.pc{border-left-color:var(--naranja)}
+.ic.tot{border-left-color:var(--negro);background:#ebebeb}
+.ic-lbl{font-size:10px;font-weight:600;color:var(--gris-t);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;line-height:1.4}
+.ic-val{font-family:'Oswald',sans-serif;font-size:20px;font-weight:500;color:var(--azul)}
+.ic.pc .ic-val{color:var(--naranja)}
+.ic.tot .ic-val{color:var(--negro)}
+.ic-val.na{font-size:13px;color:#bbb;font-family:'Montserrat',sans-serif;font-style:italic}
+
+/* VALIDACIÓN */
+.vb{border-radius:7px;padding:9px 13px;font-size:12px;margin-top:10px;display:flex;align-items:center;gap:7px}
+.vok{background:var(--verde-l);color:var(--verde);border:1px solid #a5d6a7}
+.verr{background:var(--rojo-l);color:var(--rojo);border:1px solid #ef9a9a}
+.vdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.vok .vdot{background:var(--verde)}.verr .vdot{background:var(--rojo)}
+
+/* NOTA */
+.nota{background:#fff8e1;border:1px solid #ffe082;border-radius:7px;padding:9px 13px;font-size:12px;color:#5d4037;margin-bottom:18px}
+.nota strong{font-weight:600}
+
+/* SEC TITLE */
+.st{font-family:'Oswald',sans-serif;font-size:12px;font-weight:500;color:var(--gris-t);text-transform:uppercase;letter-spacing:.05em;margin:18px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--gris-b)}
+
+/* NAV */
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:18px;border-top:1px solid var(--gris-b)}
+.btn{padding:9px 22px;border-radius:7px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-sec{background:#fff;color:var(--gris-t);border:1px solid var(--gris-b)}.btn-sec:hover{background:var(--gris-bg)}
+.btn-pri{background:var(--azul);color:#fff}.btn-pri:hover{background:var(--azul-d)}
+.btn-env{background:var(--verde);color:#fff;padding:11px 30px;font-size:14px}.btn-env:hover{background:#1b5e20}
+.btn-env:disabled{background:#aaa;cursor:not-allowed}
+
+/* RESUMEN */
+.res-emp{background:var(--azul-l);border-radius:8px;padding:14px 18px;margin-bottom:18px}
+.res-emp h3{font-family:'Oswald',sans-serif;font-size:14px;color:var(--azul);margin-bottom:7px}
+.res-row{display:flex;gap:7px;font-size:12px;color:var(--gris-t);margin-bottom:2px}
+.res-row strong{color:var(--negro);min-width:150px}
+
+/* ÉXITO */
+.ok-box{background:var(--verde-l);border:1px solid #a5d6a7;border-radius:10px;padding:28px;text-align:center}
+.ok-box h2{font-family:'Oswald',sans-serif;font-size:21px;color:var(--verde);margin-bottom:8px}
+.ok-box p{font-size:13px;color:var(--gris-t);line-height:1.7}
+
+/* SPINNER */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;margin-right:7px;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">CIER</div>
+  <div>
+    <h1>Benchmarking SST – Indicadores 2026</h1>
+    <p>Período de datos: Enero 2025 – Diciembre 2025 · Comisión de Integración Energética Regional</p>
+  </div>
+</div>
+
+<div class="steps" id="steps">
+  <div class="step active" onclick="ir(0)" id="s0">1. Identificación</div>
+  <span class="step-sep">›</span>
+  <div class="step" onclick="ir(1)" id="s1">2. Tipo de datos</div>
+  <span class="step-sep">›</span>
+  <div class="step" onclick="ir(2)" id="s2">3. Reactivos</div>
+  <span class="step-sep">›</span>
+  <div class="step" onclick="ir(3)" id="s3">4. Proactivos</div>
+  <span class="step-sep">›</span>
+  <div class="step" onclick="ir(4)" id="s4">5. Seg. Pública</div>
+  <span class="step-sep">›</span>
+  <div class="step" onclick="ir(5)" id="s5">6. Resumen</div>
+</div>
+
+<div class="main">
+
+<!-- PASO 0: IDENTIFICACIÓN -->
+<div class="card active" id="c0">
+  <div class="card-hdr"><div class="card-num">1</div><div><h2>Identificación del respondente y empresa</h2><p>Período: Enero 2025 – Diciembre 2025</p></div></div>
+  <div class="card-body">
+    <div class="g2" style="margin-bottom:14px">
+      <div class="field"><label>Nombre y apellido<span class="req">*</span></label><input id="nombre" type="text" placeholder="María García"></div>
+      <div class="field"><label>Cargo<span class="req">*</span></label><input id="cargo" type="text" placeholder="Responsable SST"></div>
+    </div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="field"><label>Correo electrónico<span class="req">*</span></label><input id="email" type="email" placeholder="correo@empresa.com"></div>
+      <div class="field"><label>Teléfono / celular<span class="req">*</span></label><input id="telefono" type="text" placeholder="+598 99 000 000"></div>
+    </div>
+    <div class="g2">
+      <div class="field"><label>Nombre de la empresa<span class="req">*</span></label><input id="empresa" type="text" placeholder="UTE"></div>
+      <div class="field"><label>País<span class="req">*</span></label>
+        <select id="pais"><option value="">Seleccione…</option>
+          <option>Argentina</option><option>Bolivia</option><option>Brasil</option><option>Chile</option>
+          <option>Colombia</option><option>Costa Rica</option><option>Cuba</option><option>Ecuador</option>
+          <option>El Salvador</option><option>Guatemala</option><option>Honduras</option><option>México</option>
+          <option>Nicaragua</option><option>Panamá</option><option>Paraguay</option><option>Perú</option>
+          <option>República Dominicana</option><option>Uruguay</option><option>Venezuela</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="field"><label>Tipo de negocio<span class="req">*</span></label>
+        <select id="negocio"><option value="">Seleccione…</option>
+          <option>Generación</option><option>Transmisión</option><option>Distribución</option>
+          <option>Integrada (más de una actividad)</option><option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="nav"><div></div><button class="btn btn-pri" onclick="sig(0)">Siguiente →</button></div>
+  </div>
+</div>
+
+<!-- PASO 1: TIPO DE DATOS -->
+<div class="card" id="c1">
+  <div class="card-hdr"><div class="card-num">2</div><div><h2>¿Qué datos va a cargar?</h2><p>Marque al menos una opción</p></div></div>
+  <div class="card-body">
+    <div class="nota"><strong>Importante:</strong> 0 indica ausencia del evento medido. Si no dispone del dato, déjelo en 0 y aclárelo en comentarios.</div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500">
+        <input type="checkbox" id="chk-pp" checked style="width:17px;height:17px;accent-color:var(--azul)"> Personal Propio (PP)
+      </label>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500">
+        <input type="checkbox" id="chk-pc" style="width:17px;height:17px;accent-color:var(--naranja)"> Contratistas / Contratados (PC)
+      </label>
+    </div>
+    <div class="nav">
+      <button class="btn btn-sec" onclick="ir(0)">← Anterior</button>
+      <button class="btn btn-pri" onclick="sig(1)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASO 2: REACTIVOS -->
+<div class="card" id="c2">
+  <div class="card-hdr"><div class="card-num">3</div><div><h2>Indicadores reactivos</h2><p>Accidentes y días perdidos — índices calculados automáticamente</p></div></div>
+  <div class="card-body">
+    <div class="nota"><strong>Validación:</strong> la suma de columnas 5+6+7+8+9 debe ser igual a la columna 1.</div>
+    <div class="tab-row">
+      <button class="tb pp" id="tb-pp-r" onclick="tab('r','pp')">Personal Propio (PP)</button>
+      <button class="tb" id="tb-pc-r" onclick="tab('r','pc')">Contratistas (PC)</button>
+    </div>
+
+    <div class="tp active" id="p-r-pp">
+      <div class="st">Datos base</div>
+      <div class="g3">
+        <div class="field"><label>Cantidad de personas</label><input type="number" id="pp_pers" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Horas hombre trabajadas (HHT)</label><input type="number" id="pp_hht" min="0" value="0" oninput="calc()"></div>
+      </div>
+      <div class="st">Columnas de accidentología</div>
+      <div class="g3">
+        <div class="field"><label>1. Acc. días perdidos sin in itinere</label><input type="number" id="pp_a1" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>2. Días perdidos totales sin in itinere</label><input type="number" id="pp_a2" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>3. Accidentes fatales totales (AFT)</label><input type="number" id="pp_a3" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>4. Acc. con posible incapacidad permanente</label><input type="number" id="pp_a4" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>5. Caídas de personas de altura</label><input type="number" id="pp_a5" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>6. Contacto con electricidad</label><input type="number" id="pp_a6" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>7. Choque de vehículos sin in itinere</label><input type="number" id="pp_a7" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>8. TCT / Línea Viva — contacto eléctrico</label><input type="number" id="pp_a8" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>9. Otros (no incluidos en 5–8)</label><input type="number" id="pp_a9" min="0" value="0" oninput="calc()"></div>
+      </div>
+      <div id="v-pp-r"></div>
+      <div class="st">Indicadores calculados — PP</div>
+      <div class="ig" id="i-pp-r"></div>
+    </div>
+
+    <div class="tp" id="p-r-pc">
+      <div class="st">Datos base</div>
+      <div class="g3">
+        <div class="field"><label>Cantidad de personas</label><input type="number" id="pc_pers" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Horas hombre trabajadas (HHT)</label><input type="number" id="pc_hht" min="0" value="0" oninput="calc()"></div>
+      </div>
+      <div class="st">Columnas de accidentología</div>
+      <div class="g3">
+        <div class="field"><label>1. Acc. días perdidos sin in itinere</label><input type="number" id="pc_a1" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>2. Días perdidos totales sin in itinere</label><input type="number" id="pc_a2" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>3. Accidentes fatales totales (AFT)</label><input type="number" id="pc_a3" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>4. Acc. con posible incapacidad permanente</label><input type="number" id="pc_a4" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>5. Caídas de personas de altura</label><input type="number" id="pc_a5" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>6. Contacto con electricidad</label><input type="number" id="pc_a6" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>7. Choque de vehículos sin in itinere</label><input type="number" id="pc_a7" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>8. TCT / Línea Viva — contacto eléctrico</label><input type="number" id="pc_a8" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>9. Otros (no incluidos en 5–8)</label><input type="number" id="pc_a9" min="0" value="0" oninput="calc()"></div>
+      </div>
+      <div id="v-pc-r"></div>
+      <div class="st">Indicadores calculados — PC</div>
+      <div class="ig" id="i-pc-r"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-sec" onclick="ir(1)">← Anterior</button>
+      <button class="btn btn-pri" onclick="sig(2)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASO 3: PROACTIVOS -->
+<div class="card" id="c3">
+  <div class="card-hdr"><div class="card-num">4</div><div><h2>Indicadores proactivos</h2><p>Últimos 12 meses — IRE, IRA y PCPCSST calculados automáticamente</p></div></div>
+  <div class="card-body">
+    <div class="tab-row">
+      <button class="tb pp" id="tb-pp-p" onclick="tab('p','pp')">Personal Propio (PP)</button>
+      <button class="tb" id="tb-pc-p" onclick="tab('p','pc')">Contratistas (PC)</button>
+    </div>
+
+    <div class="tp active" id="p-p-pp">
+      <div class="g3">
+        <div class="field"><label>Anormalidades detectadas (AD)</label><input type="number" id="pp_ad" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Anormalidades corregidas (ANC)</label><input type="number" id="pp_anc" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Auditorías programadas (AP)</label><input type="number" id="pp_ap" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Auditorías realizadas (AR)</label><input type="number" id="pp_ar" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Empleados prog. capacitación (NEPCSST)</label><input type="number" id="pp_nep" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Empleados capacitados (NECSST)</label><input type="number" id="pp_nec" min="0" value="0" oninput="calc()"></div>
+      </div>
+      <div class="st">Indicadores calculados — PP</div>
+      <div class="ig" id="i-pp-p"></div>
+    </div>
+
+    <div class="tp" id="p-p-pc">
+      <div class="g3">
+        <div class="field"><label>Anormalidades detectadas (AD)</label><input type="number" id="pc_ad" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Anormalidades corregidas (ANC)</label><input type="number" id="pc_anc" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Auditorías programadas (AP)</label><input type="number" id="pc_ap" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Auditorías realizadas (AR)</label><input type="number" id="pc_ar" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Empleados prog. capacitación (NEPCSST)</label><input type="number" id="pc_nep" min="0" value="0" oninput="calc()"></div>
+        <div class="field"><label>Empleados capacitados (NECSST)</label><input type="number" id="pc_nec" min="0" value="0" oninput="calc()"></div>
+      </div>
+      <div class="st">Indicadores calculados — PC</div>
+      <div class="ig" id="i-pc-p"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-sec" onclick="ir(2)">← Anterior</button>
+      <button class="btn btn-pri" onclick="sig(3)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASO 4: SEG. PÚBLICA -->
+<div class="card" id="c4">
+  <div class="card-hdr"><div class="card-num">5</div><div><h2>Indicadores de seguridad pública</h2><p>Accidentes a terceros en el área de concesión</p></div></div>
+  <div class="card-body">
+    <div class="nota"><strong>Alcance:</strong> personas ajenas a la empresa que sufrieron accidentes por transitar o exponerse a instalaciones eléctricas.</div>
+    <div class="g2">
+      <div class="field"><label>Muertes fatales de personas del público</label><input type="number" id="pub_fatal" min="0" value="0"></div>
+      <div class="field"><label>Accidentes no fatales de personas del público</label><input type="number" id="pub_nofatal" min="0" value="0"></div>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label>Principales causas identificadas (fatales y no fatales)</label>
+      <textarea id="pub_causas" placeholder="Redacte aquí las principales causas…"></textarea>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label>Comentarios adicionales o aclaraciones sobre los datos</label>
+      <textarea id="comentarios" placeholder="Aclaraciones sobre los datos cargados…"></textarea>
+    </div>
+    <div class="nav">
+      <button class="btn btn-sec" onclick="ir(3)">← Anterior</button>
+      <button class="btn btn-pri" onclick="sig(4)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASO 5: RESUMEN -->
+<div class="card" id="c5">
+  <div class="card-hdr"><div class="card-num">6</div><div><h2>Resumen y envío</h2><p>Verifique sus datos e indicadores antes de enviar a CIER</p></div></div>
+  <div class="card-body" id="resumen"></div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ══ CONFIGURACIÓN ══════════════════════════════════════════════════════════════
+// Reemplazar con la URL de tu Apps Script publicado
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx67pSd7_BnTEzLWgOj5QojcmiH6ltv-O1MrrmGizKw2B212tfUNzXiLn_b103UQcS6/exec';
+// ══════════════════════════════════════════════════════════════════════════════
+
+let paso = 0;
+
+function ir(p) {
+  document.getElementById('c' + paso).classList.remove('active');
+  document.getElementById('s' + paso).classList.remove('active');
+  paso = p;
+  document.getElementById('c' + paso).classList.add('active');
+  document.getElementById('s' + paso).classList.add('active');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  if (p === 5) construirResumen();
+}
+
+function sig(desde) {
+  if (!validar(desde)) return;
+  document.getElementById('s' + desde).classList.add('done');
+  ir(desde + 1);
+}
+
+function validar(p) {
+  if (p === 0) {
+    const ids = ['nombre','cargo','email','telefono','empresa','pais','negocio'];
+    let ok = true;
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('err');
+      if (!el.value.trim()) { el.classList.add('err'); ok = false; }
+    });
+    if (!ok) alert('Complete todos los campos obligatorios.');
+    return ok;
+  }
+  if (p === 1) {
+    if (!document.getElementById('chk-pp').checked && !document.getElementById('chk-pc').checked) {
+      alert('Seleccione al menos una opción (PP o PC).'); return false;
+    }
+  }
+  return true;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function tab(blk, who) {
+  ['pp','pc'].forEach(w => {
+    document.getElementById('p-' + blk + '-' + w).classList.remove('active');
+    const b = document.getElementById('tb-' + w + '-' + blk);
+    b.classList.remove('pp','pc');
+  });
+  document.getElementById('p-' + blk + '-' + who).classList.add('active');
+  const btn = document.getElementById('tb-' + who + '-' + blk);
+  btn.classList.add(who);
+}
+
+// ── CÁLCULO ───────────────────────────────────────────────────────────────────
+function v(id) { const x = parseFloat(document.getElementById(id)?.value); return isNaN(x) ? 0 : x; }
+function div(a, b, m) { return b === 0 ? null : (a / b) * m; }
+function rnd(x, d) { return x === null ? null : parseFloat(x.toFixed(d ?? 2)); }
+
+function calcSet(p) {
+  const hht=v(p+'_hht'), a1=v(p+'_a1'), a2=v(p+'_a2'), a4=v(p+'_a4');
+  const a5=v(p+'_a5'), a6=v(p+'_a6'), a7=v(p+'_a7'), a8=v(p+'_a8'), a9=v(p+'_a9');
+  const ad=v(p+'_ad'), anc=v(p+'_anc'), ap=v(p+'_ap'), ar=v(p+'_ar');
+  const nep=v(p+'_nep'), nec=v(p+'_nec');
+  const TF = rnd(div(a1,hht,1e6));
+  const TG = rnd(div(a2,hht,1e6));
+  return {
+    pers:v(p+'_pers'), hht, a1, a2, a3:v(p+'_a3'), a4, a5, a6, a7, a8, a9,
+    ad, anc, ap, ar, nep, nec,
+    TFCPSI:TF, TGSI:TG,
+    ILISI: (TF!==null&&TG!==null) ? rnd(TF*TG/1000) : null,
+    IFACA:rnd(div(a5,a1,100)), IFACE:rnd(div(a6,a1,100)),
+    IFACV:rnd(div(a7,a1,100)), IFATCT:a8===0?0:rnd(div(a8,a1,100)),
+    IFAOA:rnd(div(a9,a1,100)), IFAIP:rnd(div(a4,a1,100)),
+    IRE:rnd(div(anc,ad,100)), IRA:rnd(div(ar,ap,100)),
+    PCPCSST:rnd(div(nec,nep,100)),
+    suma59: a5+a6+a7+a8+a9
+  };
+}
+
+function ic(lbl, val, cls) {
+  cls = cls || '';
+  if (val === null) return `<div class="ic ${cls}"><div class="ic-lbl">${lbl}</div><div class="ic-val na">—</div></div>`;
+  return `<div class="ic ${cls}"><div class="ic-lbl">${lbl}</div><div class="ic-val">${val.toLocaleString('es-UY',{maximumFractionDigits:2})}</div></div>`;
+}
+
+function renderR(r, ig, vg, cls) {
+  document.getElementById(ig).innerHTML = [
+    ic('TFCPSI',r.TFCPSI,cls), ic('TGSI',r.TGSI,cls), ic('ILISI',r.ILISI,cls),
+    ic('IFACA%',r.IFACA,cls), ic('IFACE%',r.IFACE,cls), ic('IFACV%',r.IFACV,cls),
+    ic('IFATCT%',r.IFATCT,cls), ic('IFAOA%',r.IFAOA,cls), ic('IFAIP%',r.IFAIP,cls),
+  ].join('');
+  const vel = document.getElementById(vg);
+  if (!vel) return;
+  if (r.a1===0 && r.suma59===0) { vel.innerHTML=''; return; }
+  const ok = r.suma59 === r.a1;
+  vel.innerHTML = `<div class="vb ${ok?'vok':'verr'}"><div class="vdot"></div><span>${ok?'Validación OK':'REVISAR'}: columna 1 (${r.a1}) ${ok?'=':'≠'} 5+6+7+8+9 (${r.suma59})</span></div>`;
+}
+
+function renderP(r, ig, cls) {
+  document.getElementById(ig).innerHTML = [
+    ic('IRE%',r.IRE,cls), ic('IRA%',r.IRA,cls), ic('PCPCSST%',r.PCPCSST,cls)
+  ].join('');
+}
+
+function calc() {
+  const pp = calcSet('pp'), pc = calcSet('pc');
+  renderR(pp,'i-pp-r','v-pp-r','');
+  renderR(pc,'i-pc-r','v-pc-r','pc');
+  renderP(pp,'i-pp-p','');
+  renderP(pc,'i-pc-p','pc');
+}
+calc();
+
+// ── RESUMEN ───────────────────────────────────────────────────────────────────
+function construirResumen() {
+  const pp = calcSet('pp'), pc = calcSet('pc');
+  const inclPC = document.getElementById('chk-pc').checked;
+  const hhtT = pp.hht + (inclPC?pc.hht:0);
+  const a1T  = pp.a1  + (inclPC?pc.a1:0);
+  const a2T  = pp.a2  + (inclPC?pc.a2:0);
+  const TFT  = rnd(div(a1T,hhtT,1e6));
+  const TGT  = rnd(div(a2T,hhtT,1e6));
+  const ILT  = (TFT!==null&&TGT!==null) ? rnd(TFT*TGT/1000) : null;
+
+  function row(l,v){ return `<div class="res-row"><strong>${l}</strong><span>${v||'—'}</span></div>`; }
+
+  document.getElementById('resumen').innerHTML = `
+    <div class="res-emp">
+      <h3>Datos del respondente</h3>
+      ${row('Empresa',document.getElementById('empresa').value)}
+      ${row('País',document.getElementById('pais').value)}
+      ${row('Nombre',document.getElementById('nombre').value)}
+      ${row('Cargo',document.getElementById('cargo').value)}
+      ${row('Email',document.getElementById('email').value)}
+    </div>
+    <div class="st">Total consolidado PP${inclPC?'+PC':''}</div>
+    <div class="ig">
+      ${ic('TFCPSI total',TFT,'tot')}${ic('TGSI total',TGT,'tot')}${ic('ILISI total',ILT,'tot')}
+    </div>
+    <div class="st" style="margin-top:16px">Indicadores PP</div>
+    <div class="ig">
+      ${ic('TFCPSI',pp.TFCPSI,'')}${ic('TGSI',pp.TGSI,'')}${ic('ILISI',pp.ILISI,'')}
+      ${ic('IRE%',pp.IRE,'')}${ic('IRA%',pp.IRA,'')}${ic('PCPCSST%',pp.PCPCSST,'')}
+    </div>
+    ${inclPC?`
+    <div class="st" style="margin-top:16px">Indicadores PC</div>
+    <div class="ig">
+      ${ic('TFCPSI',pc.TFCPSI,'pc')}${ic('TGSI',pc.TGSI,'pc')}${ic('ILISI',pc.ILISI,'pc')}
+      ${ic('IRE%',pc.IRE,'pc')}${ic('IRA%',pc.IRA,'pc')}${ic('PCPCSST%',pc.PCPCSST,'pc')}
+    </div>`:''}
+    <div class="nav">
+      <button class="btn btn-sec" onclick="ir(4)">← Anterior</button>
+      <button class="btn btn-env" id="btn-env" onclick="enviar()">Enviar a CIER</button>
+    </div>`;
+}
+
+// ── ENVÍO A GOOGLE SHEETS ─────────────────────────────────────────────────────
+async function enviar() {
+  const btn = document.getElementById('btn-env');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Enviando…';
+
+  const pp = calcSet('pp'), pc = calcSet('pc');
+  const inclPC = document.getElementById('chk-pc').checked;
+  const hhtT = pp.hht + (inclPC?pc.hht:0);
+  const a1T  = pp.a1  + (inclPC?pc.a1:0);
+  const a2T  = pp.a2  + (inclPC?pc.a2:0);
+  const TFT  = rnd(div(a1T,hhtT,1e6));
+  const TGT  = rnd(div(a2T,hhtT,1e6));
+  const N = x => x===null?'NA':x;
+
+  const payload = {
+    nombre:  document.getElementById('nombre').value,
+    cargo:   document.getElementById('cargo').value,
+    email:   document.getElementById('email').value,
+    telefono:document.getElementById('telefono').value,
+    empresa: document.getElementById('empresa').value,
+    pais:    document.getElementById('pais').value,
+    negocio: document.getElementById('negocio').value,
+    personal:(document.getElementById('chk-pp').checked?'PP ':'')+( inclPC?'PC':''),
+    // PP reactivos
+    pp_pers:pp.pers, pp_hht:pp.hht,
+    pp_a1:pp.a1, pp_a2:pp.a2, pp_a3:pp.a3, pp_a4:pp.a4,
+    pp_a5:pp.a5, pp_a6:pp.a6, pp_a7:pp.a7, pp_a8:pp.a8, pp_a9:pp.a9,
+    pp_TFCPSI:N(pp.TFCPSI), pp_TGSI:N(pp.TGSI), pp_ILISI:N(pp.ILISI),
+    pp_IFACA:N(pp.IFACA), pp_IFACE:N(pp.IFACE), pp_IFACV:N(pp.IFACV),
+    pp_IFATCT:N(pp.IFATCT), pp_IFAOA:N(pp.IFAOA), pp_IFAIP:N(pp.IFAIP),
+    // PP proactivos
+    pp_ad:pp.ad, pp_anc:pp.anc, pp_ap:pp.ap, pp_ar:pp.ar, pp_nep:pp.nep, pp_nec:pp.nec,
+    pp_IRE:N(pp.IRE), pp_IRA:N(pp.IRA), pp_PCPCSST:N(pp.PCPCSST),
+    // PC reactivos
+    pc_pers:inclPC?pc.pers:'NA', pc_hht:inclPC?pc.hht:'NA',
+    pc_a1:inclPC?pc.a1:'NA', pc_a2:inclPC?pc.a2:'NA', pc_a3:inclPC?pc.a3:'NA',
+    pc_a4:inclPC?pc.a4:'NA', pc_a5:inclPC?pc.a5:'NA', pc_a6:inclPC?pc.a6:'NA',
+    pc_a7:inclPC?pc.a7:'NA', pc_a8:inclPC?pc.a8:'NA', pc_a9:inclPC?pc.a9:'NA',
+    pc_TFCPSI:inclPC?N(pc.TFCPSI):'NA', pc_TGSI:inclPC?N(pc.TGSI):'NA',
+    pc_ILISI:inclPC?N(pc.ILISI):'NA',
+    pc_IFACA:inclPC?N(pc.IFACA):'NA', pc_IFACE:inclPC?N(pc.IFACE):'NA',
+    pc_IFACV:inclPC?N(pc.IFACV):'NA', pc_IFATCT:inclPC?N(pc.IFATCT):'NA',
+    pc_IFAOA:inclPC?N(pc.IFAOA):'NA', pc_IFAIP:inclPC?N(pc.IFAIP):'NA',
+    pc_ad:inclPC?pc.ad:'NA', pc_anc:inclPC?pc.anc:'NA',
+    pc_ap:inclPC?pc.ap:'NA', pc_ar:inclPC?pc.ar:'NA',
+    pc_nep:inclPC?pc.nep:'NA', pc_nec:inclPC?pc.nec:'NA',
+    pc_IRE:inclPC?N(pc.IRE):'NA', pc_IRA:inclPC?N(pc.IRA):'NA',
+    pc_PCPCSST:inclPC?N(pc.PCPCSST):'NA',
+    // Totales
+    total_TFCPSI:N(TFT), total_TGSI:N(TGT),
+    total_ILISI:(TFT!==null&&TGT!==null)?N(rnd(TFT*TGT/1000)):'NA',
+    // Seguridad pública
+    pub_fatal:  document.getElementById('pub_fatal').value,
+    pub_nofatal:document.getElementById('pub_nofatal').value,
+    pub_causas: document.getElementById('pub_causas').value,
+    comentarios:document.getElementById('comentarios').value,
+    timestamp:  new Date().toISOString()
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method:'POST',
+      mode:'no-cors',   // Apps Script no devuelve CORS headers → usamos no-cors
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    // no-cors siempre devuelve respuesta opaca — si no lanzó excepción, se envió
+    mostrarExito(payload.empresa);
+  } catch(err) {
+    btn.disabled = false;
+    btn.innerHTML = 'Enviar a CIER';
+    alert('Error al enviar. Verifique su conexión o escriba a corporativa@cier.org\n\n' + err.message);
+  }
+}
+
+function mostrarExito(empresa) {
+  document.getElementById('c5').innerHTML = `
+    <div class="card-hdr" style="background:var(--verde)">
+      <div class="card-num">✓</div>
+      <div><h2>Datos enviados correctamente</h2></div>
+    </div>
+    <div class="card-body">
+      <div class="ok-box">
+        <h2>¡Gracias por participar!</h2>
+        <p>Los datos de <strong>${empresa}</strong> han sido recibidos y registrados en el sistema CIER.<br>
+        Recibirá los resultados comparativos con sus códigos identificatorios.<br><br>
+        Consultas técnicas: <strong>dpconsolani@gmail.com</strong><br>
+        Contacto institucional: <strong>corporativa@cier.org</strong></p>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>
