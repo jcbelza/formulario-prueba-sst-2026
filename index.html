@@ -165,10 +165,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris-bg);color:var(--n
         </select>
       </div>
       <div class="field"><label>Tipo de negocio<span class="req">*</span></label>
-        <select id="negocio"><option value="">Seleccione…</option>
-          <option>Generación</option><option>Transmisión</option><option>Distribución</option>
-          <option>Integrada (más de una actividad)</option><option>Otro</option>
-        </select>
+        <div id="negocio-opts" style="display:flex;flex-direction:column;gap:6px;border:1px solid var(--gris-b);border-radius:7px;padding:10px 12px;background:#fff">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--negro);text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" value="Generación" style="width:15px;height:15px;accent-color:var(--azul)"> Generación</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--negro);text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" value="Transmisión" style="width:15px;height:15px;accent-color:var(--azul)"> Transmisión</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--negro);text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" value="Distribución" style="width:15px;height:15px;accent-color:var(--azul)"> Distribución</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--negro);text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" value="Integrada (más de una actividad)" style="width:15px;height:15px;accent-color:var(--azul)"> Integrada (más de una actividad)</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--negro);text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" value="Otro" style="width:15px;height:15px;accent-color:var(--azul)"> Otro</label>
+        </div>
       </div>
     </div>
     <div class="nav"><div></div><button class="btn btn-pri" onclick="sig(0)">Siguiente →</button></div>
@@ -358,13 +361,19 @@ function sig(desde) {
 
 function validar(p) {
   if (p === 0) {
-    const ids = ['nombre','cargo','email','telefono','empresa','pais','negocio'];
+    const ids = ['nombre','cargo','email','telefono','empresa','pais'];
     let ok = true;
     ids.forEach(id => {
       const el = document.getElementById(id);
       el.classList.remove('err');
       if (!el.value.trim()) { el.classList.add('err'); ok = false; }
     });
+    if (!getNegocio()) {
+      document.getElementById('negocio-opts').style.borderColor = 'var(--rojo)';
+      ok = false;
+    } else {
+      document.getElementById('negocio-opts').style.borderColor = 'var(--gris-b)';
+    }
     if (!ok) alert('Complete todos los campos obligatorios.');
     return ok;
   }
@@ -439,7 +448,9 @@ function renderP(r, ig, cls) {
   ].join('');
 }
 
-function calc() {
+function getNegocio() {
+  return Array.from(document.querySelectorAll('#negocio-opts input[type=checkbox]:checked')).map(c=>c.value).join(', ');
+}
   const pp = calcSet('pp'), pc = calcSet('pc');
   renderR(pp,'i-pp-r','v-pp-r','');
   renderR(pc,'i-pc-r','v-pc-r','pc');
@@ -466,6 +477,7 @@ function construirResumen() {
       <h3>Datos del respondente</h3>
       ${row('Empresa',document.getElementById('empresa').value)}
       ${row('País',document.getElementById('pais').value)}
+      ${row('Negocio',getNegocio())}
       ${row('Nombre',document.getElementById('nombre').value)}
       ${row('Cargo',document.getElementById('cargo').value)}
       ${row('Email',document.getElementById('email').value)}
@@ -513,7 +525,7 @@ async function enviar() {
     telefono:document.getElementById('telefono').value,
     empresa: document.getElementById('empresa').value,
     pais:    document.getElementById('pais').value,
-    negocio: document.getElementById('negocio').value,
+    negocio: getNegocio(),
     personal:(document.getElementById('chk-pp').checked?'PP ':'')+( inclPC?'PC':''),
     // PP reactivos
     pp_pers:pp.pers, pp_hht:pp.hht,
